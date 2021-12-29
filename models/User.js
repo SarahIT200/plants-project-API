@@ -7,7 +7,7 @@ const userSchema = new mongoose.Schema({
   avatar: String,
   userName: String,
   nickName: String,
-  emailVerification: {
+  emailVerified: {
     type: Boolean,
     default: false,
   },
@@ -71,12 +71,12 @@ const loginJoi = Joi.object({
 })
 
 const profileJoi = Joi.object({
-  email: Joi.string().min(2).max(100),
-  password: Joi.string().min(8).max(100),
+  password: Joi.string().min(8).max(100).allow(""),
   avatar: Joi.string().uri().min(8).max(100),
   userName: Joi.string().min(2).max(100),
   nickName: Joi.string().min(0).max(100),
   location: Joi.string().min(0).max(100),
+  bio: Joi.string().min(0).max(300),
 })
 
 const forgotPasswordJoi = Joi.object({

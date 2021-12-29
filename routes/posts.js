@@ -14,7 +14,13 @@ const { Category } = require("../models/Category")
 
 ////get post///
 router.get("/", async (req, res) => {
-  const posts = await Post.find().populate("comments").populate("categorys").populate("owner")
+  const posts = await Post.find()
+    .populate({
+      path: "comments",
+      populate: "owner",
+    })
+    .populate("categorys")
+    .populate("owner")
   res.json(posts)
 })
 ///add post///
@@ -99,7 +105,7 @@ router.get("/:postId/comments", validateId("postId"), async (req, res) => {
     const post = await Post.findById(req.params.postId)
     if (!post) return res.status(404).send("post not found")
 
-    const comment = await Comment.find({ postId: req.params.postId }).populate("replies")
+    const comment = await Comment.find({ postId: req.params.postId }).populate("replies").populate("owner")
     res.json(comment)
   } catch (error) {
     res.status(500).send(error.message)
@@ -162,7 +168,7 @@ router.get("/:postId/comments/:commentId/replies", validateId("postId", "comment
     const comment = await Comment.findById(req.params.commentId)
     if (!comment) return res.status(404).send("comment not found")
     //get replies
-    const replay = await Replay.find({ commenttId: req.params.commentId })
+    const replay = await Replay.find({ commenttId: req.params.commentId }).populate("owner")
     res.json(replay)
   } catch (error) {
     res.status(500).send(error.message)

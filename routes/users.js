@@ -7,6 +7,7 @@ const validateBody = require("../middleware/validateBody")
 const checkToken = require("../middleware/checkToken")
 const checkAdmin = require("../middleware/checkAdmin")
 const validateId = require("../middleware/validateid")
+const { Post } = require("../models/Post")
 const { User, signupJoi, loginJoi, profileJoi, forgotPasswordJoi, resetPasswordJoi } = require("../models/User")
 const checkId = require("../middleware/checkId")
 
@@ -21,12 +22,12 @@ router.get("/users", async (req, res) => {
       .populate("replies")
       .populate({
         path: "following",
-        populate: "follpwing",
+        populate: "following",
         populate: "followers",
       })
       .populate({
         path: "followers",
-        populate: "follpwing",
+        populate: "following",
         populate: "followers",
       })
     res.json(users)
@@ -41,7 +42,8 @@ router.delete("/users/:id", checkAdmin, checkId, async (req, res) => {
     //find user and delete
     const user = await User.findByIdAndRemove(req.params.id)
     if (!user) return res.status(404).send("user not found")
-
+    await Comment.deleteMany({ owner: req.params.id })
+    await Post.deleteMany({ owner: req.params.id })
     res.send("user removed")
   } catch (error) {
     res.status(500).send(error.message)
@@ -51,9 +53,6 @@ router.delete("/users/:id", checkAdmin, checkId, async (req, res) => {
 router.post("/signup", validateBody(signupJoi), async (req, res) => {
   try {
     const { email, password, avatar, userName, nickName, location } = req.body
-
-    const result = signupJoi.validate(req.body)
-    if (result.error) return res.status(400).send(result.error.details[0].message)
 
     const userFound = await User.findOne({ email })
     if (userFound) return res.status(400).send("user already registered")
@@ -150,9 +149,9 @@ router.post("/reset-password/:token", validateBody(resetPasswordJoi), async (req
   try {
     const decryptedToken = jwt.verify(req.params.token, process.env.JWT_SECRET_KEY)
 
-    if (!decryptedTokwe.forgotPassword) return res.status(403).send("unauthorized action")
+    if (!decryptedToken.forgotPassword) return res.status(403).send("unauthorized action")
 
-    const userId = decryptedTokwe.id
+    const userId = decryptedToken.id
     const user = await User.findById(userId)
     if (!user) return res.status(404).send("user not found")
 
@@ -245,8 +244,19 @@ router.get("/profile", checkToken, async (req, res) => {
     const user = await User.findById(req.userId)
       .select("-__v -password")
       .populate("posts")
-      .populate("comments")
+      .populate({ path: "comments", populate: "owner" })
       .populate("likes")
+      .populate({ path: "replies", populate: "owner" })
+      .populate({
+        path: "following",
+        populate: "following",
+        populate: "followers",
+      })
+      .populate({
+        path: "followers",
+        populate: "following",
+        populate: "followers",
+      })
     res.json(user)
   } catch (error) {
     res.status(500).send(error.message)
@@ -255,7 +265,7 @@ router.get("/profile", checkToken, async (req, res) => {
 
 //edit my profile//
 router.put("/profile", checkToken, validateBody(profileJoi), async (req, res) => {
-  const { email, password, avatar, userName, nickName, location } = req.body
+  const { password, avatar, userName, nickName, location, bio } = req.body
 
   let hash
   if (password) {
@@ -265,7 +275,7 @@ router.put("/profile", checkToken, validateBody(profileJoi), async (req, res) =>
 
   const user = await User.findByIdAndUpdate(
     req.userId,
-    { $set: { email, password: hash, avatar, userName, nickName, location } },
+    { $set: { password: hash, avatar, userName, nickName, location, bio } },
     { new: true }
   ).select("-__v -password")
   res.json(user)
