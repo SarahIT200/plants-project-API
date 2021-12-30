@@ -243,9 +243,9 @@ router.get("/profile", checkToken, async (req, res) => {
   try {
     const user = await User.findById(req.userId)
       .select("-__v -password")
-      .populate("posts")
+      .populate({ path: "posts", populate: "owner" })
       .populate({ path: "comments", populate: "owner" })
-      .populate("likes")
+      .populate({ path: "likes", populate: "owner" })
       .populate({ path: "replies", populate: "owner" })
       .populate({
         path: "following",
@@ -287,10 +287,10 @@ router.get("/profile/:profileId", validateId("profileId"), async (req, res) => {
   try {
     const user = await User.findById(req.params.profileId)
       .select("-password")
-      .populate("likes")
-      .populate("posts")
-      .populate("comments")
-      .populate("replies")
+      .populate({ path: "posts", populate: "owner" })
+      .populate({ path: "comments", populate: "owner" })
+      .populate({ path: "likes", populate: "owner" })
+      .populate({ path: "replies", populate: "owner" })
       .populate({
         path: "following",
         populate: "follpwing",

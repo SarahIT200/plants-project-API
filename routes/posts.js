@@ -18,6 +18,7 @@ router.get("/", async (req, res) => {
     .populate({
       path: "comments",
       populate: "owner",
+      populate: { path: "replies", populate: "owner" },
     })
     .populate("categorys")
     .populate("owner")
