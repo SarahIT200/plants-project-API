@@ -6,7 +6,7 @@ const postSchema = new mongoose.Schema({
   title: String,
   description: String,
   CareWay: String,
-  categorys: {
+  category: {
     type: mongoose.Types.ObjectId,
     ref: "Category",
   },
@@ -36,22 +36,22 @@ const postSchema = new mongoose.Schema({
 
 const postJoi = Joi.object({
   image: Joi.string().uri().min(8).max(1000),
-  title: Joi.string().min(8).max(1000),
-  description: Joi.string().min(8).max(1000).required(),
-  CareWay: Joi.string().min(8).max(1000),
+  title: Joi.string().min(0).max(1000),
+  description: Joi.string().min(0).max(1000).required(),
+  CareWay: Joi.string().min(0).max(1000),
   location: Joi.array().items(Joi.string()).min(1),
   type: Joi.string().required(),
-  categorys: Joi.objectid().required(),
+  category: Joi.objectid().required(),
 })
 
 const postEditJoi = Joi.object({
   image: Joi.string().uri().min(8).max(1000),
-  title: Joi.string().min(8).max(1000),
-  description: Joi.string().min(8).max(1000),
-  CareWay: Joi.string().min(8).max(1000),
+  title: Joi.string().min(0).max(1000),
+  description: Joi.string().min(0).max(1000),
+  CareWay: Joi.string().min(0).max(1000),
   location: Joi.array().items(Joi.string()).min(1),
   type: Joi.string(),
-  categorys: Joi.objectid(),
+  category: Joi.objectid(),
 })
 
 const Post = mongoose.model("Post", postSchema)

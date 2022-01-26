@@ -10,6 +10,7 @@ const validateId = require("../middleware/validateid")
 const { Post } = require("../models/Post")
 const { User, signupJoi, loginJoi, profileJoi, forgotPasswordJoi, resetPasswordJoi } = require("../models/User")
 const checkId = require("../middleware/checkId")
+const { Comment } = require("../models/Comment")
 
 //Get Users///
 router.get("/users", async (req, res) => {
@@ -69,26 +70,26 @@ router.post("/signup", validateBody(signupJoi), async (req, res) => {
       role: "User",
     })
 
-    const transporter = nodemailer.createTransport({
-      service: "gmail",
-      port: 587,
-      secure: false, // true for 465, false for other ports
-      auth: {
-        user: process.env.SENDER_EMAIL, // generated ethereal user
-        pass: process.env.SENDER_PASSWORD, // generated ethereal password
-      },
-    })
+    // const transporter = nodemailer.createTransport({
+    //   service: "gmail",
+    //   port: 587,
+    //   secure: false, // true for 465, false for other ports
+    //   auth: {
+    //     user: process.env.SENDER_EMAIL, // generated ethereal user
+    //     pass: process.env.SENDER_PASSWORD, // generated ethereal password
+    //   },
+    // })
 
-    const token = jwt.sign({ id: user._id, emailVerification: true }, process.env.JWT_SECRET_KEY, { expiresIn: "15d" })
+    // const token = jwt.sign({ id: user._id, emailVerification: true }, process.env.JWT_SECRET_KEY, { expiresIn: "15d" })
 
-    await transporter.sendMail({
-      from: `"test" <${process.env.SENDER_EMAIL}>`, // sender address
-      to: email, // list of receivers
-      subject: "Email verification ✔", // Subject line
+    // await transporter.sendMail({
+    //   from: `"test" <${process.env.SENDER_EMAIL}>`, // sender address
+    //   to: email, // list of receivers
+    //   subject: "Email verification ✔", // Subject line
 
-      html: `Hello, please click on this link to verify your email.
-            <a href="http://localhost:3000/email_verified/${token}"> Verify email</a>`, // html body
-    })
+    //   html: `Hello, please click on this link to verify your email.
+    //         <a href="http://localhost:3000/email_verified/${token}"> Verify email</a>`, // html body
+    // })
 
     await user.save()
     //select -password
@@ -99,72 +100,72 @@ router.post("/signup", validateBody(signupJoi), async (req, res) => {
   }
 })
 
-router.get("/verify_email/:token", async (req, res) => {
-  try {
-    const decryptedToken = jwt.verify(req.params.token, process.env.JWT_SECRET_KEY)
+// router.get("/verify_email/:token", async (req, res) => {
+//   try {
+//     const decryptedToken = jwt.verify(req.params.token, process.env.JWT_SECRET_KEY)
 
-    if (!decryptedToken.emailVerification) return res.status(403).send("unauthorized token")
+//     if (!decryptedToken.emailVerification) return res.status(403).send("unauthorized token")
 
-    const userId = decryptedToken.id
-    const user = await User.findByIdAndUpdate(userId, { $set: { emailVerified: true } })
-    if (!user) return res.status(404).send("user not found")
-    res.send("user verified")
-  } catch (error) {
-    res.status(500).send(error.message)
-  }
-})
+//     const userId = decryptedToken.id
+//     const user = await User.findByIdAndUpdate(userId, { $set: { emailVerified: true } })
+//     if (!user) return res.status(404).send("user not found")
+//     res.send("user verified")
+//   } catch (error) {
+//     res.status(500).send(error.message)
+//   }
+// })
 
-router.post("/forgot-password", validateBody(forgotPasswordJoi), async (req, res) => {
-  try {
-    const { email } = req.body
-    const user = await User.findOne({ email })
-    if (!user) return res.status(404).send("user not found")
+// router.post("/forgot-password", validateBody(forgotPasswordJoi), async (req, res) => {
+//   try {
+//     const { email } = req.body
+//     const user = await User.findOne({ email })
+//     if (!user) return res.status(404).send("user not found")
 
-    const transporter = nodemailer.createTransport({
-      service: "gmail",
-      port: 587,
-      secure: false, // true for 465, false for other ports
-      auth: {
-        user: process.env.SENDER_EMAIL, // generated ethereal user
-        pass: process.env.SENDER_PASSWORD, // generated ethereal password
-      },
-    })
+//     const transporter = nodemailer.createTransport({
+//       service: "gmail",
+//       port: 587,
+//       secure: false, // true for 465, false for other ports
+//       auth: {
+//         user: process.env.SENDER_EMAIL, // generated ethereal user
+//         pass: process.env.SENDER_PASSWORD, // generated ethereal password
+//       },
+//     })
 
-    const token = jwt.sign({ id: user._id, forgotPassword: true }, process.env.JWT_SECRET_KEY, { expiresIn: "15d" })
+//     const token = jwt.sign({ id: user._id, forgotPassword: true }, process.env.JWT_SECRET_KEY, { expiresIn: "15d" })
 
-    await transporter.sendMail({
-      from: `"test" <${process.env.SENDER_EMAIL}>`, // sender address
-      to: email, // list of receivers
-      subject: "Rest password ✔", // Subject line
+//     await transporter.sendMail({
+//       from: `"test" <${process.env.SENDER_EMAIL}>`, // sender address
+//       to: email, // list of receivers
+//       subject: "Rest password ✔", // Subject line
 
-      html: `Hello, please click on this link to reset your password.
-    <a href="http://localhost:3000/reset-password/${token}"> reset password</a>`, // html body
-    })
-  } catch (error) {
-    res.status(500).send(error.message)
-  }
-})
+//       html: `Hello, please click on this link to reset your password.
+//     <a href="http://localhost:3000/reset-password/${token}"> reset password</a>`, // html body
+//     })
+//   } catch (error) {
+//     res.status(500).send(error.message)
+//   }
+// })
 
-router.post("/reset-password/:token", validateBody(resetPasswordJoi), async (req, res) => {
-  try {
-    const decryptedToken = jwt.verify(req.params.token, process.env.JWT_SECRET_KEY)
+// router.post("/reset-password/:token", validateBody(resetPasswordJoi), async (req, res) => {
+//   try {
+//     const decryptedToken = jwt.verify(req.params.token, process.env.JWT_SECRET_KEY)
 
-    if (!decryptedToken.forgotPassword) return res.status(403).send("unauthorized action")
+//     if (!decryptedToken.forgotPassword) return res.status(403).send("unauthorized action")
 
-    const userId = decryptedToken.id
-    const user = await User.findById(userId)
-    if (!user) return res.status(404).send("user not found")
+//     const userId = decryptedToken.id
+//     const user = await User.findById(userId)
+//     if (!user) return res.status(404).send("user not found")
 
-    const { password } = req.body
-    const salt = await bcrypt.genSalt(10)
-    const hash = (password, salt)
+//     const { password } = req.body
+//     const salt = await bcrypt.genSalt(10)
+//     const hash = (password, salt)
 
-    await User.findByIdAndUpdate(userId, { $set: { password: hash } })
-    res.send("password reset")
-  } catch (error) {
-    res.status(500).send(error.message)
-  }
-})
+//     await User.findByIdAndUpdate(userId, { $set: { password: hash } })
+//     res.send("password reset")
+//   } catch (error) {
+//     res.status(500).send(error.message)
+//   }
+// })
 
 // add admin by  admin//
 router.post("/add-admin", checkAdmin, validateBody(signupJoi), async (req, res) => {
@@ -191,12 +192,6 @@ router.post("/add-admin", checkAdmin, validateBody(signupJoi), async (req, res) 
   } catch (error) {
     res.status(500).send(error.message)
   }
-})
-
-//get user for admin//
-router.get("/users", checkAdmin, async (req, res) => {
-  const user = await User.find().populate()
-  res.json(user)
 })
 
 //login//
@@ -293,12 +288,12 @@ router.get("/profile/:profileId", validateId("profileId"), async (req, res) => {
       .populate({ path: "replies", populate: "owner" })
       .populate({
         path: "following",
-        populate: "follpwing",
+        populate: "follخwing",
         populate: "followers",
       })
       .populate({
         path: "followers",
-        populate: "follpwing",
+        populate: "follخwing",
         populate: "followers",
       })
     if (!user) return res.status(403).send("user not found")

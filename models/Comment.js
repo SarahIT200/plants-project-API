@@ -3,6 +3,10 @@ const Joi = require("joi")
 
 const commentSchema = new mongoose.Schema({
   comment: String,
+  postId: {
+    type: mongoose.Types.ObjectId,
+    ref: "post",
+  },
   replies: [
     {
       type: mongoose.Types.ObjectId,

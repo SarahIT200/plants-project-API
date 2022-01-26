@@ -8,8 +8,12 @@ const { Category, categoryJoi } = require("../models/Category")
 const checkAdmin = require("../middleware/checkAdmin")
 
 router.get("/", async (req, res) => {
-  const category = await Category.find()
-  res.json(category)
+  try {
+    const category = await Category.find()
+    res.json(category)
+  } catch (error) {
+    res.status(500).send(error.message)
+  }
 })
 
 router.post("/", checkAdmin, validateBody(categoryJoi), async (req, res) => {
@@ -31,7 +35,7 @@ router.delete("/:id", checkAdmin, checkId, async (req, res) => {
   try {
     const category = await Category.findByIdAndRemove(req.params.id)
     if (!category) return res.status(404).send("category not found")
-    res.send(error.message)
+    res.send("removed")
   } catch (error) {
     res.status(500).send(error.message)
   }

@@ -9,30 +9,31 @@ const validateId = require("../middleware/validateid")
 const { User } = require("../models/User")
 const { Replay, replayJoi } = require("../models/Replay")
 const { Category } = require("../models/Category")
+const checkAdmin = require("../middleware/checkAdmin")
 
 ////////POST/////////////////
 
 ////get post///
 router.get("/", async (req, res) => {
-  const posts = await Post.find()
-    .populate({
-      path: "comments",
-      populate: "owner",
-      populate: { path: "replies", populate: "owner" },
-    })
-    .populate("categorys")
-    .populate("owner")
-  res.json(posts)
+  try {
+    const posts = await Post.find()
+      .populate("category")
+      .populate({
+        path: "comments",
+        populate: ["owner", { path: "replies", populate: "owner" }],
+      })
+      .populate("owner")
+    res.json(posts)
+  } catch {
+    res.status(500).send(error.message)
+  }
 })
 ///add post///
 router.post("/", checkToken, validateBody(postJoi), async (req, res) => {
   try {
-    const { image, title, description, CareWay, location, type, categorys } = req.body
+    const { image, title, description, CareWay, location, type, category } = req.body
 
-    //remove duplicated
-    const categorySet = new Set(categorys)
-
-    const categoryFound = await Category.findOne({ _id: categorys })
+    const categoryFound = await Category.findOne({ _id: category })
     if (!categoryFound) return res.status(404).send("category not found")
     const post = new Post({
       image,
@@ -41,7 +42,7 @@ router.post("/", checkToken, validateBody(postJoi), async (req, res) => {
       CareWay,
       location,
       type,
-      categorys: categorySet,
+      category,
       owner: req.userId,
     })
     //add to user
@@ -59,18 +60,16 @@ router.post("/", checkToken, validateBody(postJoi), async (req, res) => {
 router.put("/:id", checkToken, checkId, validateBody(postEditJoi), async (req, res) => {
   try {
     //get body
-    const { image, title, description, CareWay, location, type, categorys } = req.body
+    const { image, title, description, CareWay, location, type, category } = req.body
 
-    //remove duplicated category
-    const categorySet = new Set(categorys)
-    const categoryFound = await Category.findOne({ _id: categorys })
+    const categoryFound = await Category.findOne({ _id: category })
     if (!categoryFound) return res.status(404).send("category not found")
     const post = await Post.findById(req.params.id)
     if (post.owner != req.userId) return res.status(404).send("unauthorized action")
     // edit post
     const Updatepost = await Post.findByIdAndUpdate(
       req.params.id,
-      { $set: { image, title, description, CareWay, location, type, categorys: categorySet } },
+      { $set: { image, title, description, CareWay, location, type, category } },
       { new: true }
     )
     if (!Updatepost) return res.status(404).send("post not found")
@@ -84,11 +83,10 @@ router.put("/:id", checkToken, checkId, validateBody(postEditJoi), async (req, r
 router.delete("/:id", checkToken, checkId, async (req, res) => {
   try {
     const user = await User.findById(req.userId)
-    if (user.role !== "Admin" && replayFound.owner != req.userId) return res.status(403).send("unauthorized action")
-
-    await Comment.deleteMany({ postId: req.params.id })
     const post = await Post.findByIdAndRemove(req.params.id)
     if (!post) return res.status(404).send("post not found")
+    if (user.role !== "Admin" && post.owner != req.userId) return res.status(403).send("unauthorized action")
+    await Comment.deleteMany({ postId: req.params.id })
 
     //delete from user
     await User.findByIdAndUpdate(req.userId, { $pull: { posts: post._id } })
@@ -221,7 +219,7 @@ router.delete(
       //get replay
       const replayFound = await Replay.findById(req.params.replayId)
       if (!replayFound) return res.status(404).send("replay not found")
-      // get user who can delete
+      // get user
       const user = await User.findById(req.userId)
       if (user.role !== "Admin" && replayFound.owner != req.userId) return res.status(403).send("unauthorized action")
       //delete replay from comment
